@@ -29,4 +29,10 @@ Check where's null coming frome? Why that's the case
 * `rank()/dense_rank()/row_number()` + `over(partition by unique combination order by timestamp)` to remove duplicate, partition by unique combination, order by timestamp
 
 # 3. Formatting
+Check df using `df.info()` , `df.describe`
 
+## 3.1 Format column names
+## 3.2 Format Datatype
+## 3.3 Format Data body
+
+--> Next step: EDA
