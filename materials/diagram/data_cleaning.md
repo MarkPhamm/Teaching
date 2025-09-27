@@ -26,7 +26,7 @@ Check where's null coming frome? Why that's the case
 * How to gen PK -> Generate PK from a group of columns
 
 ## 2.2 Handle duplication 
-* rank/dense_rank/row_number() to remove duplicate, partition by unique combination, order by timestamp
+* `rank/dense_rank/row_number()` to remove duplicate, partition by unique combination, order by timestamp
 
 # 3. Formatting
 
