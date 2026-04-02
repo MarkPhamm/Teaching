@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 3 — dbt & the Transformation Layer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #1a1a2e;
+            --accent: #0984e3;
+            --accent-light: #74b9ff;
+            --muted: #636e72;
+            --bg: #ffffff;
+            --bg-light: #f8f9fd;
+            --bg-dark: #1a1a2e;
+            --green: #00b894;
+            --green-bg: #e8f8f5;
+            --orange: #e17055;
+            --orange-bg: #fef0ed;
+            --purple: #6c5ce7;
+            --purple-bg: #f0eef9;
+            --blue-bg: #eef3fd;
+            --teal: #00cec9;
+            --teal-bg: #e0f7f6;
+            --pink: #e84393;
+            --pink-bg: #fce4ec;
+            --radius: 16px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--primary); }
+
+        /* ── Slide engine ── */
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 60px 80px;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .slide.active { display: flex; }
+
+        /* ── Section title slides ── */
+        .slide.section-title {
+            background: var(--bg-dark);
+            color: white;
+            align-items: center;
+            text-align: center;
+        }
+        .slide.section-title h1 { font-size: 3.5em; font-weight: 800; margin-bottom: 0.2em; }
+        .slide.section-title .subtitle { font-size: 1.4em; font-weight: 400; color: var(--accent-light); }
+        .slide.section-title .section-num {
+            font-size: 8em;
+            font-weight: 800;
+            color: rgba(255,255,255,0.06);
+            position: absolute;
+            bottom: -20px;
+            right: 60px;
+        }
+
+        /* ── Slide header with number ── */
+        .slide-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5em;
+            margin-bottom: 0.6em;
+        }
+        .slide-header .num {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        .slide-header h2 {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0;
+        }
+
+        /* ── Content slides ── */
+        h1 { font-size: 2.4em; font-weight: 800; margin-bottom: 0.1em; }
+        h2 { font-size: 2em; font-weight: 700; color: var(--primary); margin-bottom: 0.6em; }
+        h3 { font-size: 1.15em; font-weight: 600; color: var(--muted); margin-bottom: 0.5em; margin-top: 1em; }
+        p { font-size: 1.05em; line-height: 1.6; color: #444; }
+        ul { list-style: none; padding: 0; }
+        ul li {
+            font-size: 1.05em;
+            line-height: 1.6;
+            padding: 0.3em 0 0.3em 1.5em;
+            position: relative;
+            color: #444;
+        }
+        ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.75em;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .highlight { color: var(--accent); font-weight: 600; }
+        .warn { color: var(--orange); font-weight: 600; }
+        .good { color: var(--green); font-weight: 600; }
+
+        /* ── Callout boxes ── */
+        .callout {
+            background: var(--blue-bg);
+            border-left: 4px solid var(--accent);
+            padding: 1em 1.4em;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            margin: 1em 0;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        .callout.warn-box { background: var(--orange-bg); border-left-color: var(--orange); }
+        .callout.good-box { background: var(--green-bg); border-left-color: var(--green); }
+        .callout.purple-box { background: var(--purple-bg); border-left-color: var(--purple); }
+        .callout.pink-box { background: var(--pink-bg); border-left-color: var(--pink); }
+
+        /* ── Quote ── */
+        .quote {
+            font-size: 1.3em;
+            font-style: italic;
+            color: var(--muted);
+            border-left: 4px solid var(--accent);
+            padding: 0.8em 1.4em;
+            margin: 1em 0;
+            max-width: 800px;
+        }
+
+        /* ── Grids & cards ── */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; margin: 0.8em 0; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2em; margin: 0.8em 0; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1.2em; margin: 0.8em 0; }
+
+        .card {
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 1.4em;
+            box-shadow: var(--shadow);
+        }
+        .card h3 { margin-top: 0; color: var(--primary); font-size: 1.1em; }
+        .card p, .card li { font-size: 0.92em; }
+        .card.accent { border-top: 4px solid var(--accent); }
+        .card.green { border-top: 4px solid var(--green); }
+        .card.orange { border-top: 4px solid var(--orange); }
+        .card.purple { border-top: 4px solid var(--purple); }
+        .card.pink { border-top: 4px solid var(--pink); }
+        .card.teal { border-top: 4px solid var(--teal); }
+
+        /* ── Primary tool highlight ── */
+        .primary-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.2em 0.7em;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-bottom: 0.3em;
+        }
+
+        /* ── Icon rows ── */
+        .icon-row { display: flex; gap: 2em; justify-content: center; align-items: center; margin: 1.2em 0; flex-wrap: wrap; }
+        .icon-item { display: flex; flex-direction: column; align-items: center; gap: 0.5em; }
+        .icon-item img { height: 52px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08)); }
+        .icon-item span { font-size: 0.8em; color: var(--muted); font-weight: 500; }
+        .icon-item.primary { position: relative; }
+        .icon-item.primary::after {
+            content: 'primary';
+            position: absolute;
+            bottom: -16px;
+            font-size: 0.65em;
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Visual architecture ── */
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 1.5em 0;
+            flex-wrap: nowrap;
+        }
+        .arch-node {
+            background: var(--bg-light);
+            border: 2px solid #dfe6e9;
+            border-radius: var(--radius);
+            padding: 1em 1.4em;
+            text-align: center;
+            min-width: 140px;
+            box-shadow: var(--shadow);
+        }
+        .arch-node.accent { border-color: var(--accent); background: var(--blue-bg); }
+        .arch-node.green { border-color: var(--green); background: var(--green-bg); }
+        .arch-node.purple { border-color: var(--purple); background: var(--purple-bg); }
+        .arch-node.orange { border-color: var(--orange); background: var(--orange-bg); }
+        .arch-node.pink { border-color: var(--pink); background: var(--pink-bg); }
+        .arch-node.teal { border-color: var(--teal); background: var(--teal-bg); }
+        .arch-node h4 { font-size: 0.85em; font-weight: 700; margin-bottom: 0.3em; text-transform: uppercase; letter-spacing: 0.05em; }
+        .arch-node p { font-size: 0.78em; color: var(--muted); margin: 0; line-height: 1.4; }
+        .arch-node img { height: 28px; margin: 0.3em 0.2em; }
+        .arch-arrow {
+            font-size: 1.8em;
+            color: var(--accent);
+            padding: 0 0.3em;
+            flex-shrink: 0;
+        }
+
+        .arch-wrapper {
+            position: relative;
+            border: 2px dashed var(--accent-light);
+            border-radius: 24px;
+            padding: 2.5em 2em 1.5em;
+            margin: 0.5em 0;
+        }
+        .arch-wrapper .arch-label {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 0.3em 1.5em;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .arch-wrapper .arch-sublabel {
+            text-align: center;
+            margin-top: 1em;
+            font-size: 0.82em;
+            color: var(--muted);
+        }
+
+        /* ── Table ── */
+        table { width: 100%; border-collapse: collapse; font-size: 0.95em; margin: 0.8em 0; }
+        th { background: var(--accent); color: white; padding: 0.8em 1.2em; text-align: left; font-weight: 600; }
+        th:first-child { border-radius: var(--radius) 0 0 0; }
+        th:last-child { border-radius: 0 var(--radius) 0 0; }
+        td { padding: 0.8em 1.2em; border-bottom: 1px solid #eee; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: var(--bg-light); }
+
+        /* ── Table of Contents ── */
+        .toc {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+            margin-top: 1em;
+        }
+        .toc-item {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 1em 1.4em;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .toc-item:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .toc-num {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2em;
+            color: white;
+            flex-shrink: 0;
+        }
+        .toc-num.c1 { background: var(--accent); }
+        .toc-num.c2 { background: var(--green); }
+        .toc-num.c3 { background: var(--purple); }
+        .toc-num.c4 { background: #00cec9; }
+        .toc-num.c5 { background: var(--orange); }
+        .toc-num.c6 { background: var(--pink); }
+        .toc-num.c7 { background: var(--primary); }
+        .toc-text h3 { margin: 0; font-size: 1.05em; color: var(--primary); }
+        .toc-text p { margin: 0.15em 0 0; font-size: 0.82em; color: var(--muted); }
+
+        /* ── Takeaway list ── */
+        .takeaway-list { display: flex; flex-direction: column; gap: 0.6em; }
+        .takeaway-item {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 0.8em 1.2em;
+            box-shadow: var(--shadow);
+        }
+        .takeaway-num {
+            background: var(--accent);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+        .takeaway-item p { margin: 0; font-size: 0.95em; }
+
+        /* ── Code block ── */
+        .code-block {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            border-radius: var(--radius);
+            padding: 1.2em 1.6em;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85em;
+            line-height: 1.7;
+            overflow-x: auto;
+            margin: 0.8em 0;
+            box-shadow: var(--shadow);
+        }
+        .code-block .comment { color: #6c7086; }
+        .code-block .keyword { color: #cba6f7; }
+        .code-block .string { color: #a6e3a1; }
+        .code-block .function { color: #89b4fa; }
+        .code-block .config-key { color: #f9e2af; }
+        .code-block .jinja { color: #fab387; }
+
+        /* ── Folder tree ── */
+        .folder-tree {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            border-radius: var(--radius);
+            padding: 1.2em 1.6em;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.82em;
+            line-height: 1.8;
+            box-shadow: var(--shadow);
+        }
+        .folder-tree .folder { color: #89b4fa; font-weight: 600; }
+        .folder-tree .file { color: #cdd6f4; }
+        .folder-tree .desc { color: #6c7086; }
+
+        /* ── Navigation ── */
+        .nav {
+            position: fixed;
+            bottom: 24px;
+            right: 32px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+        .nav button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav button:hover { background: var(--accent); }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .slide-num {
+            position: fixed;
+            bottom: 28px;
+            left: 32px;
+            font-size: 0.85em;
+            color: var(--muted);
+            font-weight: 500;
+            z-index: 100;
+        }
+
+        /* ── Animations ── */
+        .slide.active { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<!-- ═══════════════════ SLIDE 0: Title ═══════════════════ -->
+<div class="slide section-title active">
+    <h1>dbt &amp; the<br>Transformation Layer</h1>
+    <p class="subtitle">Turning raw data into trusted, analytics-ready models</p>
+    <span class="section-num">03</span>
+</div>
+
+<!-- ═══════════════════ SLIDE 1: Quote ═══════════════════ -->
+<div class="slide">
+    <div class="quote">"dbt doesn't extract or load data — it takes data that's already in your warehouse and transforms it into something useful."</div>
+    <p style="margin-top:1.5em; max-width:750px;">This lesson dives deep into <span class="highlight">dbt (data build tool)</span> — the industry standard for the transformation layer in modern ELT pipelines. We'll cover how it works, how to structure a project, and why it changed analytics engineering.</p>
+    <div class="icon-row" style="margin-top:1.5em;">
+        <div class="icon-item primary"><img src="../../../assets/icons/dbt.svg" alt="dbt"><span>dbt core</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/snowflake.svg" alt="Snowflake"><span>Snowflake</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/duckdb.svg" alt="DuckDB"><span>DuckDB</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/google-bigquery.svg" alt="BigQuery"><span>BigQuery</span></div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SLIDE 2: Table of Contents ═══════════════════ -->
+<div class="slide">
+    <h2>Table of Contents</h2>
+    <div class="toc">
+        <div class="toc-item" onclick="goToSlide(4)">
+            <div class="toc-num c1">1</div>
+            <div class="toc-text">
+                <h3>Why dbt Exists</h3>
+                <p>1.1 The Problem &bull; 1.2 What dbt Does &bull; 1.3 Where It Fits</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(8)">
+            <div class="toc-num c2">2</div>
+            <div class="toc-text">
+                <h3>Project Structure</h3>
+                <p>2.1 Anatomy &bull; 2.2 Key Files</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(10)">
+            <div class="toc-num c3">3</div>
+            <div class="toc-text">
+                <h3>Models & Layers</h3>
+                <p>3.1 What's a Model &bull; 3.2 The Three Layers &bull; 3.3 Naming</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(14)">
+            <div class="toc-num c4">4</div>
+            <div class="toc-text">
+                <h3>Materializations</h3>
+                <p>4.1 Types &bull; 4.2 When to Use What</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(17)">
+            <div class="toc-num c5">5</div>
+            <div class="toc-text">
+                <h3>Sources & ref()</h3>
+                <p>5.1 Sources &bull; 5.2 ref() &bull; 5.3 Lineage</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(21)">
+            <div class="toc-num c6">6</div>
+            <div class="toc-text">
+                <h3>Testing & Documentation</h3>
+                <p>6.1 Tests &bull; 6.2 Custom Tests &bull; 6.3 Docs</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(25)">
+            <div class="toc-num c7">7</div>
+            <div class="toc-text">
+                <h3>Jinja, Macros & Packages</h3>
+                <p>7.1 Jinja &bull; 7.2 Macros &bull; 7.3 Packages</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SLIDE 3: Where dbt Lives ═══════════════════ -->
+<div class="slide">
+    <h2>Where dbt Fits in the Pipeline</h2>
+    <div class="arch-wrapper">
+        <div class="arch-label">dbt operates entirely inside the warehouse</div>
+        <div class="arch-flow">
+            <div class="arch-node accent" style="min-width:120px;">
+                <h4>1. Ingestion</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/dlt.svg" alt="" style="height:20px;">
+                    <img src="../../../assets/icons/airbyte.svg" alt="" style="height:20px;">
+                </div>
+                <p>Extract &amp; Load</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node purple" style="min-width:120px;">
+                <h4>2. Warehouse</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/duckdb.svg" alt="" style="height:20px;">
+                    <img src="../../../assets/icons/snowflake.svg" alt="" style="height:20px;">
+                </div>
+                <p>Raw data lands here</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node green" style="min-width:160px; border-width:3px;">
+                <h4>3. dbt (Transform)</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/dbt.svg" alt="" style="height:24px;">
+                </div>
+                <p>SQL models, tests,<br>docs — all versioned</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node orange" style="min-width:120px;">
+                <h4>4. Consumption</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/tableau.svg" alt="" style="height:20px;">
+                    <img src="../../../assets/icons/powerbi.svg" alt="" style="height:20px;">
+                </div>
+                <p>Dashboards &amp; reports</p>
+            </div>
+        </div>
+    </div>
+    <div class="callout good-box" style="margin-top:1em;">
+        <strong>Key insight:</strong> dbt doesn't move data. It reads from the warehouse and writes back to the warehouse. All compute happens on the warehouse's engine.
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 1: Why dbt Exists ═══════════════════ -->
+<div class="slide section-title">
+    <h1>1. Why dbt Exists</h1>
+    <p class="subtitle">The problem it solves and how it changed analytics</p>
+    <span class="section-num">01</span>
+</div>
+
+<!-- 1.1 The Problem -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">1.1</span>
+        <h2>The Problem Before dbt</h2>
+    </div>
+    <div class="grid-2">
+        <div class="card orange">
+            <h3 style="color: var(--orange);">What Teams Were Doing</h3>
+            <ul>
+                <li>Hundreds of SQL scripts in random folders</li>
+                <li>No version control — "final_v3_REAL_final.sql"</li>
+                <li>No testing — broken logic found by end users</li>
+                <li>No documentation — tribal knowledge only</li>
+                <li>No dependency management — run scripts in the right order... manually</li>
+            </ul>
+        </div>
+        <div class="card green">
+            <h3 style="color: var(--green);">What dbt Introduced</h3>
+            <ul>
+                <li>SQL files in a Git repo with clear structure</li>
+                <li>Version-controlled, code-reviewed transformations</li>
+                <li>Built-in testing framework for data quality</li>
+                <li>Auto-generated documentation and lineage</li>
+                <li>Automatic dependency resolution via <strong>ref()</strong></li>
+            </ul>
+        </div>
+    </div>
+    <div class="callout" style="margin-top:0.8em;">
+        <strong>In one sentence:</strong> dbt treats SQL transformations like software — with version control, testing, documentation, and CI/CD.
+    </div>
+</div>
+
+<!-- 1.2 What dbt Does -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">1.2</span>
+        <h2>What dbt Actually Does</h2>
+    </div>
+    <p>You write <strong>SELECT</strong> statements. dbt handles the rest.</p>
+    <div class="grid-4" style="margin-top:1em;">
+        <div class="card accent">
+            <h3>Compile</h3>
+            <p>Turns your SQL + Jinja templates into pure SQL that the warehouse understands</p>
+        </div>
+        <div class="card green">
+            <h3>Build</h3>
+            <p>Runs compiled SQL against the warehouse — creates tables and views in the right order</p>
+        </div>
+        <div class="card purple">
+            <h3>Test</h3>
+            <p>Validates data quality after every run — not null, unique, accepted values, relationships</p>
+        </div>
+        <div class="card orange">
+            <h3>Document</h3>
+            <p>Auto-generates a browsable site with model descriptions, column details, and lineage graphs</p>
+        </div>
+    </div>
+    <div class="callout purple-box" style="margin-top:1em;">
+        <strong>You never write CREATE TABLE or INSERT INTO.</strong> You write a SELECT, and dbt decides how to materialize it based on your configuration.
+    </div>
+</div>
+
+<!-- 1.3 dbt Core vs dbt Cloud -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">1.3</span>
+        <h2>dbt Core vs dbt Cloud</h2>
+    </div>
+    <div class="grid-2">
+        <div class="card green">
+            <span class="primary-badge">What We Use</span>
+            <h3 style="color: var(--green); font-size:1.3em; margin-top:0.3em;">dbt Core (Open Source)</h3>
+            <ul>
+                <li>Free, open-source CLI tool</li>
+                <li>Run from your terminal or CI/CD pipeline</li>
+                <li>Full control over execution environment</li>
+                <li>Pairs with any orchestrator (Airflow, Dagster)</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3 style="font-size:1.3em;">dbt Cloud (SaaS)</h3>
+            <ul>
+                <li>Managed service by dbt Labs</li>
+                <li>Web IDE, job scheduling, alerting</li>
+                <li>Built-in CI for pull requests</li>
+                <li>Costs money — free tier available</li>
+            </ul>
+            <div class="callout" style="margin-top:0.8em; font-size:0.88em;">Same SQL, same project structure. Cloud just adds a managed layer on top of Core.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 2: Project Structure ═══════════════════ -->
+<div class="slide section-title">
+    <h1>2. Project Structure</h1>
+    <p class="subtitle">How a dbt project is organized</p>
+    <span class="section-num">02</span>
+</div>
+
+<!-- 2.1 Anatomy -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">2.1</span>
+        <h2>Anatomy of a dbt Project</h2>
+    </div>
+    <div class="grid-2">
+        <div class="folder-tree">
+            <span class="folder">my_project/</span><br>
+            ├── <span class="file">dbt_project.yml</span> <span class="desc">&larr; project config</span><br>
+            ├── <span class="folder">models/</span> <span class="desc">&larr; your SQL transformations</span><br>
+            │&nbsp;&nbsp; ├── <span class="folder">staging/</span> <span class="desc">&larr; 1:1 with sources</span><br>
+            │&nbsp;&nbsp; ├── <span class="folder">intermediate/</span> <span class="desc">&larr; business logic</span><br>
+            │&nbsp;&nbsp; └── <span class="folder">marts/</span> <span class="desc">&larr; final outputs</span><br>
+            ├── <span class="folder">tests/</span> <span class="desc">&larr; custom data tests</span><br>
+            ├── <span class="folder">macros/</span> <span class="desc">&larr; reusable SQL/Jinja</span><br>
+            ├── <span class="folder">seeds/</span> <span class="desc">&larr; CSV lookup tables</span><br>
+            ├── <span class="folder">snapshots/</span> <span class="desc">&larr; SCD Type 2</span><br>
+            └── <span class="folder">analyses/</span> <span class="desc">&larr; ad-hoc queries</span>
+        </div>
+        <div>
+            <div class="card accent">
+                <h3>models/</h3>
+                <p>The heart of the project. Each <strong>.sql</strong> file is a model — a SELECT statement that dbt materializes into a table or view.</p>
+            </div>
+            <div class="card green" style="margin-top:0.8em;">
+                <h3>YAML files</h3>
+                <p>Live alongside models. Define <strong>sources</strong>, <strong>tests</strong>, <strong>descriptions</strong>, and <strong>column metadata</strong>.</p>
+            </div>
+            <div class="card purple" style="margin-top:0.8em;">
+                <h3>macros/</h3>
+                <p>Reusable Jinja functions — like utility functions for your SQL.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2.2 Key Files -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">2.2</span>
+        <h2>Key Configuration Files</h2>
+    </div>
+    <div class="grid-2">
+        <div>
+            <h3 style="color: var(--accent);">dbt_project.yml</h3>
+            <div class="code-block">
+                <span class="config-key">name:</span> <span class="string">'my_project'</span><br>
+                <span class="config-key">version:</span> <span class="string">'1.0.0'</span><br>
+                <span class="config-key">profile:</span> <span class="string">'my_project'</span><br>
+                <br>
+                <span class="config-key">models:</span><br>
+                &nbsp;&nbsp;<span class="config-key">my_project:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">staging:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">+materialized:</span> <span class="string">view</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">marts:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">+materialized:</span> <span class="string">table</span>
+            </div>
+        </div>
+        <div>
+            <h3 style="color: var(--accent);">profiles.yml</h3>
+            <div class="code-block">
+                <span class="comment"># Lives in ~/.dbt/profiles.yml</span><br>
+                <span class="comment"># Defines warehouse connection</span><br>
+                <br>
+                <span class="config-key">my_project:</span><br>
+                &nbsp;&nbsp;<span class="config-key">target:</span> <span class="string">dev</span><br>
+                &nbsp;&nbsp;<span class="config-key">outputs:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">dev:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">type:</span> <span class="string">duckdb</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">path:</span> <span class="string">dev.duckdb</span>
+            </div>
+            <div class="callout" style="margin-top:0.6em; font-size:0.88em;">
+                <strong>profiles.yml</strong> is NOT in the project repo — it contains credentials. Each developer has their own.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 3: Models & Layers ═══════════════════ -->
+<div class="slide section-title">
+    <h1>3. Models &amp; Layers</h1>
+    <p class="subtitle">The building blocks of dbt transformations</p>
+    <span class="section-num">03</span>
+</div>
+
+<!-- 3.1 What's a Model -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.1</span>
+        <h2>What is a Model?</h2>
+    </div>
+    <p>A model is a <strong>.sql file</strong> containing a single SELECT statement. dbt compiles it and creates a table or view in your warehouse.</p>
+    <div class="grid-2" style="margin-top:1em;">
+        <div>
+            <h3 style="color: var(--green);">What you write</h3>
+            <div class="code-block">
+                <span class="comment">-- models/staging/stg_orders.sql</span><br>
+                <br>
+                <span class="keyword">SELECT</span><br>
+                &nbsp;&nbsp;id <span class="keyword">AS</span> order_id,<br>
+                &nbsp;&nbsp;user_id,<br>
+                &nbsp;&nbsp;status,<br>
+                &nbsp;&nbsp;created_at<br>
+                <span class="keyword">FROM</span> <span class="jinja">{{ source('raw', 'orders') }}</span>
+            </div>
+        </div>
+        <div>
+            <h3 style="color: var(--purple);">What dbt generates</h3>
+            <div class="code-block">
+                <span class="comment">-- Compiled SQL</span><br>
+                <br>
+                <span class="keyword">CREATE VIEW</span> analytics.stg_orders <span class="keyword">AS</span> (<br>
+                &nbsp;&nbsp;<span class="keyword">SELECT</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;id <span class="keyword">AS</span> order_id,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;user_id,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;status,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;created_at<br>
+                &nbsp;&nbsp;<span class="keyword">FROM</span> raw.orders<br>
+                );
+            </div>
+        </div>
+    </div>
+    <div class="callout good-box" style="margin-top:0.6em;">
+        <strong>You write the logic. dbt handles the DDL.</strong> No CREATE TABLE, no INSERT INTO, no DROP IF EXISTS.
+    </div>
+</div>
+
+<!-- 3.2 The Three Layers -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.2</span>
+        <h2>The Three Model Layers</h2>
+    </div>
+    <div class="arch-flow" style="margin:0.5em 0 1.2em;">
+        <div class="arch-node accent" style="min-width:180px;">
+            <h4>Staging</h4>
+            <p>1:1 with raw tables<br>Clean &amp; rename</p>
+        </div>
+        <div class="arch-arrow">&#8594;</div>
+        <div class="arch-node purple" style="min-width:180px;">
+            <h4>Intermediate</h4>
+            <p>Business logic<br>Joins &amp; aggregations</p>
+        </div>
+        <div class="arch-arrow">&#8594;</div>
+        <div class="arch-node green" style="min-width:180px;">
+            <h4>Marts</h4>
+            <p>Final outputs<br>Ready for consumption</p>
+        </div>
+    </div>
+    <div class="grid-3">
+        <div class="card accent">
+            <h3>Staging (stg_)</h3>
+            <ul>
+                <li>One model per source table</li>
+                <li>Light transformations only: rename, cast, reformat</li>
+                <li>Materialized as <strong>views</strong></li>
+                <li>Never joins — just cleans a single source</li>
+            </ul>
+        </div>
+        <div class="card purple">
+            <h3>Intermediate (int_)</h3>
+            <ul>
+                <li>Combine staging models</li>
+                <li>Apply business logic, joins, filters</li>
+                <li>Not exposed to end users</li>
+                <li>Break complex logic into steps</li>
+            </ul>
+        </div>
+        <div class="card green">
+            <h3>Marts (fct_, dim_)</h3>
+            <ul>
+                <li>Final tables consumed by BI tools</li>
+                <li><strong>fct_</strong> = facts (events, transactions)</li>
+                <li><strong>dim_</strong> = dimensions (entities, lookups)</li>
+                <li>Materialized as <strong>tables</strong></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 3.3 Naming Conventions -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.3</span>
+        <h2>Naming Conventions</h2>
+    </div>
+    <table>
+        <thead>
+            <tr><th>Layer</th><th>Prefix</th><th>Example</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Staging</strong></td><td>stg_</td><td>stg_stripe__payments</td><td>Clean a single raw source</td></tr>
+            <tr><td><strong>Intermediate</strong></td><td>int_</td><td>int_payments_pivoted</td><td>Combine and reshape</td></tr>
+            <tr><td><strong>Fact</strong></td><td>fct_</td><td>fct_orders</td><td>Events and transactions</td></tr>
+            <tr><td><strong>Dimension</strong></td><td>dim_</td><td>dim_customers</td><td>Entities and attributes</td></tr>
+        </tbody>
+    </table>
+    <div class="grid-2" style="margin-top:1em;">
+        <div class="callout good-box" style="margin:0;">
+            <strong>Double underscore</strong> in staging: <code>stg_&lt;source&gt;__&lt;table&gt;</code><br>
+            This tells you exactly where the data came from.
+        </div>
+        <div class="callout warn-box" style="margin:0;">
+            <strong>Anti-pattern:</strong> naming models after what they do instead of what they are.<br>
+            <code>transform_orders</code> &rarr; <code>stg_shopify__orders</code>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 4: Materializations ═══════════════════ -->
+<div class="slide section-title">
+    <h1>4. Materializations</h1>
+    <p class="subtitle">How dbt writes results to the warehouse</p>
+    <span class="section-num">04</span>
+</div>
+
+<!-- 4.1 Types -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">4.1</span>
+        <h2>Materialization Types</h2>
+    </div>
+    <div class="grid-4">
+        <div class="card accent">
+            <h3>View</h3>
+            <p>A saved query — re-executes every time it's read. No storage cost, always fresh.</p>
+            <div class="code-block" style="font-size:0.75em; padding:0.6em 0.8em; margin-top:0.6em;">
+                <span class="keyword">CREATE VIEW</span> AS<br>
+                <span class="keyword">SELECT</span> ...
+            </div>
+        </div>
+        <div class="card green">
+            <h3>Table</h3>
+            <p>Physically stored. Rebuilt from scratch on every run. Fast reads, slower builds.</p>
+            <div class="code-block" style="font-size:0.75em; padding:0.6em 0.8em; margin-top:0.6em;">
+                <span class="keyword">CREATE TABLE</span> AS<br>
+                <span class="keyword">SELECT</span> ...
+            </div>
+        </div>
+        <div class="card purple">
+            <h3>Incremental</h3>
+            <p>Only processes new/changed rows. Best for large, append-heavy tables.</p>
+            <div class="code-block" style="font-size:0.75em; padding:0.6em 0.8em; margin-top:0.6em;">
+                <span class="keyword">INSERT INTO</span> ...<br>
+                <span class="keyword">WHERE</span> new rows
+            </div>
+        </div>
+        <div class="card orange">
+            <h3>Ephemeral</h3>
+            <p>Not stored — injected as a CTE into downstream models. Like a reusable SQL snippet.</p>
+            <div class="code-block" style="font-size:0.75em; padding:0.6em 0.8em; margin-top:0.6em;">
+                <span class="keyword">WITH</span> model <span class="keyword">AS</span> (<br>
+                &nbsp;&nbsp;<span class="keyword">SELECT</span> ...<br>
+                )
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4.2 When to Use What -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">4.2</span>
+        <h2>When to Use What</h2>
+    </div>
+    <table>
+        <thead>
+            <tr><th>Materialization</th><th>Use When</th><th>Avoid When</th><th>Typical Layer</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>View</strong></td><td>Small data, always need latest, staging</td><td>Slow queries, downstream depends on it heavily</td><td>Staging</td></tr>
+            <tr><td><strong>Table</strong></td><td>End-user models, BI tools read from it</td><td>Data is huge and mostly append-only</td><td>Marts</td></tr>
+            <tr><td><strong>Incremental</strong></td><td>Large tables, event logs, append-heavy</td><td>Small tables, complex business logic</td><td>Marts (large)</td></tr>
+            <tr><td><strong>Ephemeral</strong></td><td>DRY reusable logic, not needed as output</td><td>Need to query the model directly</td><td>Intermediate (sometimes)</td></tr>
+        </tbody>
+    </table>
+    <div class="callout good-box" style="margin-top:1em;">
+        <strong>Default strategy:</strong> staging = view, marts = table, upgrade to incremental only when table rebuilds become too slow.
+    </div>
+</div>
+
+<!-- Incremental deep dive -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">4.3</span>
+        <h2>Incremental Models — How They Work</h2>
+    </div>
+    <div class="grid-2">
+        <div>
+            <div class="code-block">
+                <span class="jinja">{{</span><br>
+                &nbsp;&nbsp;<span class="function">config</span>(<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">materialized</span>=<span class="string">'incremental'</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">unique_key</span>=<span class="string">'event_id'</span><br>
+                &nbsp;&nbsp;)<br>
+                <span class="jinja">}}</span><br>
+                <br>
+                <span class="keyword">SELECT</span><br>
+                &nbsp;&nbsp;event_id,<br>
+                &nbsp;&nbsp;user_id,<br>
+                &nbsp;&nbsp;event_type,<br>
+                &nbsp;&nbsp;created_at<br>
+                <span class="keyword">FROM</span> <span class="jinja">{{ source('raw', 'events') }}</span><br>
+                <br>
+                <span class="jinja">{% if</span> <span class="function">is_incremental</span>() <span class="jinja">%}</span><br>
+                &nbsp;&nbsp;<span class="keyword">WHERE</span> created_at &gt; (<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">SELECT MAX</span>(created_at)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">FROM</span> <span class="jinja">{{ this }}</span><br>
+                &nbsp;&nbsp;)<br>
+                <span class="jinja">{% endif %}</span>
+            </div>
+        </div>
+        <div>
+            <div class="card green">
+                <h3 style="color: var(--green);">First Run</h3>
+                <p>Builds the full table from scratch (ignores the <code>is_incremental()</code> block).</p>
+            </div>
+            <div class="card accent" style="margin-top:0.8em;">
+                <h3>Subsequent Runs</h3>
+                <p>Only selects rows newer than the latest <code>created_at</code> already in the table.</p>
+            </div>
+            <div class="card purple" style="margin-top:0.8em;">
+                <h3>unique_key</h3>
+                <p>Handles upserts — if a row with the same key exists, it updates instead of duplicating.</p>
+            </div>
+            <div class="callout warn-box" style="margin-top:0.8em; font-size:0.88em;">
+                <strong>Full refresh:</strong> run <code>dbt run --full-refresh</code> to rebuild from scratch when logic changes.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 5: Sources & ref() ═══════════════════ -->
+<div class="slide section-title">
+    <h1>5. Sources &amp; ref()</h1>
+    <p class="subtitle">How dbt knows where data comes from and how models connect</p>
+    <span class="section-num">05</span>
+</div>
+
+<!-- 5.1 Sources -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">5.1</span>
+        <h2>Sources</h2>
+    </div>
+    <p>Sources declare the raw tables that exist in your warehouse <strong>before</strong> dbt touches them.</p>
+    <div class="grid-2" style="margin-top:1em;">
+        <div>
+            <h3 style="color: var(--accent);">_sources.yml</h3>
+            <div class="code-block">
+                <span class="config-key">version:</span> <span class="string">2</span><br>
+                <br>
+                <span class="config-key">sources:</span><br>
+                &nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">stripe</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">schema:</span> <span class="string">raw_stripe</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">tables:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">payments</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">customers</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">loaded_at_field:</span> <span class="string">_etl_loaded_at</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">freshness:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">warn_after:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">count:</span> <span class="string">12</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">period:</span> <span class="string">hour</span>
+            </div>
+        </div>
+        <div>
+            <div class="card accent">
+                <h3>Why Declare Sources?</h3>
+                <ul>
+                    <li><strong>Lineage</strong> — dbt tracks what raw tables your models depend on</li>
+                    <li><strong>Freshness</strong> — alert when source data is stale</li>
+                    <li><strong>Documentation</strong> — sources appear in the DAG and docs site</li>
+                    <li><strong>Abstraction</strong> — if a schema name changes, update one YAML file, not 50 models</li>
+                </ul>
+            </div>
+            <div class="callout good-box" style="margin-top:0.8em;">
+                <strong>Usage:</strong> <code>{{ source('stripe', 'payments') }}</code><br>
+                Resolves to the actual schema.table in the warehouse.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5.2 ref() -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">5.2</span>
+        <h2>ref() — The Most Important Function</h2>
+    </div>
+    <p><strong>ref()</strong> references another dbt model. It's how models connect to each other.</p>
+    <div class="grid-2" style="margin-top:1em;">
+        <div>
+            <div class="code-block">
+                <span class="comment">-- models/marts/fct_orders.sql</span><br>
+                <br>
+                <span class="keyword">SELECT</span><br>
+                &nbsp;&nbsp;o.order_id,<br>
+                &nbsp;&nbsp;o.customer_id,<br>
+                &nbsp;&nbsp;o.status,<br>
+                &nbsp;&nbsp;p.amount<br>
+                <span class="keyword">FROM</span> <span class="jinja">{{ ref('stg_shopify__orders') }}</span> o<br>
+                <span class="keyword">LEFT JOIN</span> <span class="jinja">{{ ref('stg_stripe__payments') }}</span> p<br>
+                &nbsp;&nbsp;<span class="keyword">ON</span> o.payment_id = p.payment_id
+            </div>
+        </div>
+        <div>
+            <div class="card green">
+                <h3 style="color: var(--green);">What ref() Does</h3>
+                <ul>
+                    <li><strong>Resolves names</strong> — translates model name to actual schema.table</li>
+                    <li><strong>Builds the DAG</strong> — dbt knows fct_orders depends on both staging models</li>
+                    <li><strong>Execution order</strong> — staging runs first, marts run after</li>
+                    <li><strong>Environment aware</strong> — resolves to dev or prod schema automatically</li>
+                </ul>
+            </div>
+            <div class="callout warn-box" style="margin-top:0.8em;">
+                <strong>Never hardcode table names.</strong> Always use <code>ref()</code> for dbt models and <code>source()</code> for raw tables. Hardcoded names break lineage and environment switching.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5.3 Lineage (DAG) -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">5.3</span>
+        <h2>The DAG — Lineage Graph</h2>
+    </div>
+    <p>Every <strong>ref()</strong> and <strong>source()</strong> call builds a Directed Acyclic Graph. dbt uses this to determine execution order.</p>
+    <div class="arch-wrapper" style="margin-top:1em;">
+        <div class="arch-label">dbt builds and runs models in this order automatically</div>
+        <div style="display:flex; flex-direction:column; gap:1.2em; align-items:center; padding:1em 0;">
+            <div style="display:flex; gap:1em; align-items:center;">
+                <div class="arch-node" style="min-width:130px; border-color:#aaa; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Source</h4>
+                    <p style="font-size:0.72em;">raw.orders</p>
+                </div>
+                <div class="arch-node" style="min-width:130px; border-color:#aaa; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Source</h4>
+                    <p style="font-size:0.72em;">raw.payments</p>
+                </div>
+                <div class="arch-node" style="min-width:130px; border-color:#aaa; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Source</h4>
+                    <p style="font-size:0.72em;">raw.customers</p>
+                </div>
+            </div>
+            <div style="font-size:1.8em; color:var(--accent);">&#8595;</div>
+            <div style="display:flex; gap:1em; align-items:center;">
+                <div class="arch-node accent" style="min-width:140px; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Staging</h4>
+                    <p style="font-size:0.72em;">stg_orders</p>
+                </div>
+                <div class="arch-node accent" style="min-width:140px; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Staging</h4>
+                    <p style="font-size:0.72em;">stg_payments</p>
+                </div>
+                <div class="arch-node accent" style="min-width:140px; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Staging</h4>
+                    <p style="font-size:0.72em;">stg_customers</p>
+                </div>
+            </div>
+            <div style="font-size:1.8em; color:var(--accent);">&#8595;</div>
+            <div style="display:flex; gap:1.5em; align-items:center;">
+                <div class="arch-node green" style="min-width:160px; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Mart</h4>
+                    <p style="font-size:0.72em;">fct_orders</p>
+                </div>
+                <div class="arch-node green" style="min-width:160px; padding:0.6em 1em;">
+                    <h4 style="font-size:0.7em;">Mart</h4>
+                    <p style="font-size:0.72em;">dim_customers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 6: Testing & Documentation ═══════════════════ -->
+<div class="slide section-title">
+    <h1>6. Testing &amp;<br>Documentation</h1>
+    <p class="subtitle">Trust your data — prove it's correct</p>
+    <span class="section-num">06</span>
+</div>
+
+<!-- 6.1 Built-in Tests -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">6.1</span>
+        <h2>Built-in Tests (Generic Tests)</h2>
+    </div>
+    <p>Tests are assertions about your data. dbt runs them after building models and <span class="warn">fails if any row violates the rule</span>.</p>
+    <div class="grid-2" style="margin-top:1em;">
+        <div>
+            <h3 style="color: var(--accent);">_schema.yml</h3>
+            <div class="code-block">
+                <span class="config-key">models:</span><br>
+                &nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">stg_orders</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">columns:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">order_id</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">tests:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="string">not_null</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="string">unique</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">status</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">tests:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="string">accepted_values</span>:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">values:</span> <span class="string">['placed', 'shipped', 'completed']</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">customer_id</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">tests:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="string">relationships</span>:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">to:</span> <span class="string">ref('stg_customers')</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">field:</span> <span class="string">customer_id</span>
+            </div>
+        </div>
+        <div>
+            <div class="grid-2" style="grid-template-columns:1fr;">
+                <div class="card accent">
+                    <h3>not_null</h3>
+                    <p>Asserts no NULL values in the column</p>
+                </div>
+                <div class="card green">
+                    <h3>unique</h3>
+                    <p>Asserts every value is distinct — validates your primary key</p>
+                </div>
+                <div class="card purple">
+                    <h3>accepted_values</h3>
+                    <p>Column only contains values from your allowlist</p>
+                </div>
+                <div class="card orange">
+                    <h3>relationships</h3>
+                    <p>Foreign key check — every value exists in the referenced model</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 6.2 Custom Tests -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">6.2</span>
+        <h2>Custom Tests (Singular Tests)</h2>
+    </div>
+    <p>Write any SQL query as a test. If it returns rows, the test <strong>fails</strong>.</p>
+    <div class="grid-2" style="margin-top:1em;">
+        <div>
+            <h3 style="color: var(--orange);">tests/assert_no_negative_amounts.sql</h3>
+            <div class="code-block">
+                <span class="comment">-- Returns rows where amount is negative</span><br>
+                <span class="comment">-- If any rows come back, the test FAILS</span><br>
+                <br>
+                <span class="keyword">SELECT</span><br>
+                &nbsp;&nbsp;order_id,<br>
+                &nbsp;&nbsp;amount<br>
+                <span class="keyword">FROM</span> <span class="jinja">{{ ref('fct_orders') }}</span><br>
+                <span class="keyword">WHERE</span> amount &lt; 0
+            </div>
+        </div>
+        <div>
+            <div class="card accent">
+                <h3>When to Use Custom Tests</h3>
+                <ul>
+                    <li>Business rules that go beyond the 4 generic tests</li>
+                    <li>Cross-model validation (totals should match)</li>
+                    <li>Detecting specific data anomalies</li>
+                    <li>Revenue should never be negative</li>
+                </ul>
+            </div>
+            <div class="callout" style="margin-top:0.8em;">
+                <strong>Running tests:</strong><br>
+                <code>dbt test</code> — run all tests<br>
+                <code>dbt test --select stg_orders</code> — test one model<br>
+                <code>dbt build</code> — run models + tests together
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 6.3 Documentation -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">6.3</span>
+        <h2>Documentation</h2>
+    </div>
+    <div class="grid-2">
+        <div>
+            <h3 style="color: var(--accent);">Add Descriptions in YAML</h3>
+            <div class="code-block">
+                <span class="config-key">models:</span><br>
+                &nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">fct_orders</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">description:</span> <span class="string">"One row per order. Includes<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payment amount and customer info."</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">columns:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">order_id</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">description:</span> <span class="string">"Primary key"</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="config-key">name:</span> <span class="string">amount</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">description:</span> <span class="string">"Payment in USD"</span>
+            </div>
+            <div class="callout" style="margin-top:0.8em; font-size:0.88em;">
+                <code>dbt docs generate</code> &rarr; builds the site<br>
+                <code>dbt docs serve</code> &rarr; opens it in your browser
+            </div>
+        </div>
+        <div>
+            <div class="card green" style="text-align:center;">
+                <h3 style="color: var(--green);">What You Get</h3>
+                <div style="margin:1em 0;">
+                    <div style="background:white; border-radius:12px; padding:1.2em; box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+                        <p style="font-size:0.85em; font-weight:600; color:var(--primary); margin-bottom:0.5em;">Auto-generated docs site</p>
+                        <ul style="text-align:left;">
+                            <li>Model descriptions &amp; column details</li>
+                            <li>Interactive lineage graph (DAG)</li>
+                            <li>Source freshness status</li>
+                            <li>Test coverage overview</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="callout purple-box" style="margin-top:0.8em;">
+                <strong>Best practice:</strong> documentation lives next to the code in YAML. When the model changes, update the docs in the same PR.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 7: Jinja, Macros & Packages ═══════════════════ -->
+<div class="slide section-title">
+    <h1>7. Jinja, Macros<br>&amp; Packages</h1>
+    <p class="subtitle">Power features for DRY, reusable SQL</p>
+    <span class="section-num">07</span>
+</div>
+
+<!-- 7.1 Jinja Basics -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">7.1</span>
+        <h2>Jinja Templating</h2>
+    </div>
+    <p>dbt uses <strong>Jinja</strong> — a Python templating language — inside SQL files. It lets you add logic, loops, and variables to your SQL.</p>
+    <div class="grid-3" style="margin-top:1em;">
+        <div class="card accent">
+            <h3>Expressions {{ }}</h3>
+            <div class="code-block" style="font-size:0.78em; padding:0.6em 0.8em;">
+                <span class="comment">-- Output a value</span><br>
+                <span class="jinja">{{ ref('stg_orders') }}</span><br>
+                <span class="jinja">{{ var('start_date') }}</span>
+            </div>
+            <p style="margin-top:0.5em;">Outputs the result of a function or variable.</p>
+        </div>
+        <div class="card green">
+            <h3>Statements {% %}</h3>
+            <div class="code-block" style="font-size:0.78em; padding:0.6em 0.8em;">
+                <span class="comment">-- Control flow</span><br>
+                <span class="jinja">{% if</span> target.name == <span class="string">'dev'</span> <span class="jinja">%}</span><br>
+                &nbsp;&nbsp;<span class="keyword">LIMIT</span> 100<br>
+                <span class="jinja">{% endif %}</span>
+            </div>
+            <p style="margin-top:0.5em;">Logic: if/else, for loops, set variables.</p>
+        </div>
+        <div class="card purple">
+            <h3>Comments {# #}</h3>
+            <div class="code-block" style="font-size:0.78em; padding:0.6em 0.8em;">
+                <span class="comment">{# This won't appear</span><br>
+                <span class="comment">&nbsp;&nbsp;&nbsp;in compiled SQL #}</span>
+            </div>
+            <p style="margin-top:0.5em;">Jinja comments — stripped during compilation.</p>
+        </div>
+    </div>
+    <div class="callout warn-box" style="margin-top:0.8em;">
+        <strong>Don't overdo it.</strong> Jinja makes SQL harder to read. Use it for DRY patterns, not to build a programming language inside SQL.
+    </div>
+</div>
+
+<!-- 7.2 Macros -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">7.2</span>
+        <h2>Macros — Reusable SQL Functions</h2>
+    </div>
+    <div class="grid-2">
+        <div>
+            <h3 style="color: var(--accent);">macros/cents_to_dollars.sql</h3>
+            <div class="code-block">
+                <span class="jinja">{% macro</span> <span class="function">cents_to_dollars</span>(column_name) <span class="jinja">%}</span><br>
+                &nbsp;&nbsp;(<span class="jinja">{{ column_name }}</span> / 100.0)<br>
+                <span class="jinja">{% endmacro %}</span>
+            </div>
+            <h3 style="color: var(--green); margin-top:1.5em;">Using it in a model</h3>
+            <div class="code-block">
+                <span class="keyword">SELECT</span><br>
+                &nbsp;&nbsp;order_id,<br>
+                &nbsp;&nbsp;<span class="jinja">{{ cents_to_dollars('amount_cents') }}</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">AS</span> amount_dollars<br>
+                <span class="keyword">FROM</span> <span class="jinja">{{ ref('stg_payments') }}</span>
+            </div>
+        </div>
+        <div>
+            <div class="card green">
+                <h3 style="color: var(--green);">When to Use Macros</h3>
+                <ul>
+                    <li>Same logic repeated across many models</li>
+                    <li>Unit conversions (cents → dollars, UTC → local)</li>
+                    <li>Standard cleaning patterns (trim, lower, coalesce)</li>
+                    <li>Generating SQL dynamically (pivot columns, union sources)</li>
+                </ul>
+            </div>
+            <div class="card orange" style="margin-top:0.8em;">
+                <h3 style="color: var(--orange);">When NOT to Use Macros</h3>
+                <ul>
+                    <li>Logic used only once — just write the SQL inline</li>
+                    <li>Making SQL "clever" at the cost of readability</li>
+                    <li>A package already provides the macro</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 7.3 Packages -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">7.3</span>
+        <h2>Packages — Community Macros</h2>
+    </div>
+    <p>Packages are shared dbt projects with pre-built macros, tests, and models you can install.</p>
+    <div class="grid-2" style="margin-top:1em;">
+        <div>
+            <h3 style="color: var(--accent);">packages.yml</h3>
+            <div class="code-block">
+                <span class="config-key">packages:</span><br>
+                &nbsp;&nbsp;- <span class="config-key">package:</span> <span class="string">dbt-labs/dbt_utils</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">version:</span> <span class="string">[">=1.0.0", "<2.0.0"]</span><br>
+                &nbsp;&nbsp;- <span class="config-key">package:</span> <span class="string">dbt-labs/codegen</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="config-key">version:</span> <span class="string">[">=0.12.0", "<1.0.0"]</span>
+            </div>
+            <div class="callout" style="margin-top:0.6em; font-size:0.88em;">
+                Install with: <code>dbt deps</code>
+            </div>
+        </div>
+        <div>
+            <div class="card green">
+                <h3 style="color: var(--green);">dbt_utils (Essential)</h3>
+                <ul>
+                    <li><strong>surrogate_key</strong> — generate hash-based surrogate keys</li>
+                    <li><strong>pivot</strong> — pivot rows to columns</li>
+                    <li><strong>union_relations</strong> — union multiple tables dynamically</li>
+                    <li><strong>date_spine</strong> — generate date dimension tables</li>
+                </ul>
+            </div>
+            <div class="card purple" style="margin-top:0.8em;">
+                <h3>codegen</h3>
+                <p>Auto-generates staging models and YAML schemas from your sources. Saves hours of boilerplate.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ dbt Commands ═══════════════════ -->
+<div class="slide">
+    <h2>Essential dbt Commands</h2>
+    <table>
+        <thead>
+            <tr><th>Command</th><th>What It Does</th><th>When to Use</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>dbt run</strong></td><td>Build all models</td><td>Daily development</td></tr>
+            <tr><td><strong>dbt test</strong></td><td>Run all tests</td><td>After building models</td></tr>
+            <tr><td><strong>dbt build</strong></td><td>Run + test in dependency order</td><td>Most common — does both</td></tr>
+            <tr><td><strong>dbt run --select model_name</strong></td><td>Build one model</td><td>Working on a specific model</td></tr>
+            <tr><td><strong>dbt run --select model_name+</strong></td><td>Build model + all downstream</td><td>Changed a staging model</td></tr>
+            <tr><td><strong>dbt run --full-refresh</strong></td><td>Rebuild incremental from scratch</td><td>Logic change in incremental model</td></tr>
+            <tr><td><strong>dbt deps</strong></td><td>Install packages</td><td>After adding to packages.yml</td></tr>
+            <tr><td><strong>dbt docs generate && dbt docs serve</strong></td><td>Build &amp; view docs site</td><td>Reviewing documentation</td></tr>
+            <tr><td><strong>dbt source freshness</strong></td><td>Check if source data is stale</td><td>Monitoring ingestion</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ═══════════════════ Best Practices ═══════════════════ -->
+<div class="slide">
+    <h2>dbt Best Practices</h2>
+    <div class="grid-2">
+        <div class="card green">
+            <h3 style="color: var(--green);">Do</h3>
+            <ul>
+                <li><strong>One model, one purpose</strong> — don't cram multiple transforms into one file</li>
+                <li><strong>Always use ref() and source()</strong> — never hardcode table names</li>
+                <li><strong>Test your primary keys</strong> — unique + not_null on every model</li>
+                <li><strong>Follow the layer pattern</strong> — staging → intermediate → marts</li>
+                <li><strong>Document as you build</strong> — descriptions in the same PR as the model</li>
+                <li><strong>Use version control</strong> — every change goes through a PR with review</li>
+            </ul>
+        </div>
+        <div class="card orange">
+            <h3 style="color: var(--orange);">Don't</h3>
+            <ul>
+                <li><strong>Don't skip staging</strong> — marts that read directly from raw tables are fragile</li>
+                <li><strong>Don't over-use Jinja</strong> — if the SQL is unreadable, you've gone too far</li>
+                <li><strong>Don't make everything incremental</strong> — only when table rebuilds are too slow</li>
+                <li><strong>Don't build one giant model</strong> — break complex logic into intermediate steps</li>
+                <li><strong>Don't ignore tests</strong> — untested models are liabilities</li>
+                <li><strong>Don't commit profiles.yml</strong> — it has credentials</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ Key Takeaways ═══════════════════ -->
+<div class="slide">
+    <h2>Key Takeaways</h2>
+    <div class="takeaway-list">
+        <div class="takeaway-item"><div class="takeaway-num">1</div><p><strong>dbt = SQL + software engineering</strong> — version control, testing, docs, CI/CD for transformations</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">2</div><p><strong>Three layers</strong> — staging (clean), intermediate (combine), marts (serve). Keep them separate.</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">3</div><p><strong>ref() builds the DAG</strong> — dbt knows what depends on what and runs in the right order</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">4</div><p><strong>Materializations matter</strong> — views for staging, tables for marts, incremental only when needed</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">5</div><p><strong>Test everything</strong> — not_null + unique on every primary key, accepted_values on categorical columns</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">6</div><p><strong>Documentation is free</strong> — add descriptions in YAML, dbt generates the rest automatically</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">7</div><p><strong>Jinja & packages</strong> — keep SQL DRY, but don't sacrifice readability for cleverness</p></div>
+    </div>
+</div>
+
+<!-- ═══════════════════ Questions ═══════════════════ -->
+<div class="slide section-title">
+    <h1>Questions?</h1>
+</div>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<div class="nav">
+    <button onclick="goToSlide(2)" title="Table of Contents" style="font-size:0.9em;">&#9776;</button>
+    <button onclick="changeSlide(-1)" title="Previous">&#8592;</button>
+    <button onclick="changeSlide(1)" title="Next">&#8594;</button>
+</div>
+
+<script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progress = document.getElementById('progress');
+    const slideNum = document.getElementById('slideNum');
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, slides.length - 1));
+        slides[current].classList.add('active');
+        progress.style.width = ((current + 1) / slides.length * 100) + '%';
+        slideNum.textContent = (current + 1) + ' / ' + slides.length;
+    }
+
+    function goToSlide(n) { showSlide(n); }
+    function changeSlide(dir) { showSlide(current + dir); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+        if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+        if (e.key === 'End') { e.preventDefault(); showSlide(slides.length - 1); }
+        if (e.key === 't' || e.key === 'T') { e.preventDefault(); goToSlide(2); }
+    });
+
+    showSlide(0);
+</script>
+
+</body>
+</html>
