@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 1 — Data Pipeline Components</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #1a1a2e;
+            --accent: #0984e3;
+            --accent-light: #74b9ff;
+            --muted: #636e72;
+            --bg: #ffffff;
+            --bg-light: #f8f9fd;
+            --bg-dark: #1a1a2e;
+            --green: #00b894;
+            --green-bg: #e8f8f5;
+            --orange: #e17055;
+            --orange-bg: #fef0ed;
+            --purple: #6c5ce7;
+            --purple-bg: #f0eef9;
+            --blue-bg: #eef3fd;
+            --teal: #00cec9;
+            --teal-bg: #e0f7f6;
+            --pink: #e84393;
+            --pink-bg: #fce4ec;
+            --radius: 16px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--primary); }
+
+        /* ── Slide engine ── */
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 60px 80px;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .slide.active { display: flex; }
+
+        /* ── Section title slides ── */
+        .slide.section-title {
+            background: var(--bg-dark);
+            color: white;
+            align-items: center;
+            text-align: center;
+        }
+        .slide.section-title h1 { font-size: 3.5em; font-weight: 800; margin-bottom: 0.2em; }
+        .slide.section-title .subtitle { font-size: 1.4em; font-weight: 400; color: var(--accent-light); }
+        .slide.section-title .section-num {
+            font-size: 8em;
+            font-weight: 800;
+            color: rgba(255,255,255,0.06);
+            position: absolute;
+            bottom: -20px;
+            right: 60px;
+        }
+
+        /* ── Slide header with number ── */
+        .slide-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5em;
+            margin-bottom: 0.6em;
+        }
+        .slide-header .num {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        .slide-header h2 {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0;
+        }
+
+        /* ── Content slides ── */
+        h1 { font-size: 2.4em; font-weight: 800; margin-bottom: 0.1em; }
+        h2 { font-size: 2em; font-weight: 700; color: var(--primary); margin-bottom: 0.6em; }
+        h3 { font-size: 1.15em; font-weight: 600; color: var(--muted); margin-bottom: 0.5em; margin-top: 1em; }
+        p { font-size: 1.05em; line-height: 1.6; color: #444; }
+        ul { list-style: none; padding: 0; }
+        ul li {
+            font-size: 1.05em;
+            line-height: 1.6;
+            padding: 0.3em 0 0.3em 1.5em;
+            position: relative;
+            color: #444;
+        }
+        ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.75em;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .highlight { color: var(--accent); font-weight: 600; }
+        .warn { color: var(--orange); font-weight: 600; }
+        .good { color: var(--green); font-weight: 600; }
+
+        /* ── Callout boxes ── */
+        .callout {
+            background: var(--blue-bg);
+            border-left: 4px solid var(--accent);
+            padding: 1em 1.4em;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            margin: 1em 0;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        .callout.warn-box { background: var(--orange-bg); border-left-color: var(--orange); }
+        .callout.good-box { background: var(--green-bg); border-left-color: var(--green); }
+        .callout.purple-box { background: var(--purple-bg); border-left-color: var(--purple); }
+        .callout.pink-box { background: var(--pink-bg); border-left-color: var(--pink); }
+
+        /* ── Quote ── */
+        .quote {
+            font-size: 1.3em;
+            font-style: italic;
+            color: var(--muted);
+            border-left: 4px solid var(--accent);
+            padding: 0.8em 1.4em;
+            margin: 1em 0;
+            max-width: 800px;
+        }
+
+        /* ── Grids & cards ── */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; margin: 0.8em 0; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2em; margin: 0.8em 0; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1.2em; margin: 0.8em 0; }
+
+        .card {
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 1.4em;
+            box-shadow: var(--shadow);
+        }
+        .card h3 { margin-top: 0; color: var(--primary); font-size: 1.1em; }
+        .card p, .card li { font-size: 0.92em; }
+        .card.accent { border-top: 4px solid var(--accent); }
+        .card.green { border-top: 4px solid var(--green); }
+        .card.orange { border-top: 4px solid var(--orange); }
+        .card.purple { border-top: 4px solid var(--purple); }
+        .card.pink { border-top: 4px solid var(--pink); }
+        .card.teal { border-top: 4px solid var(--teal); }
+
+        /* ── Primary tool highlight ── */
+        .primary-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.2em 0.7em;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-bottom: 0.3em;
+        }
+
+        /* ── Icon rows ── */
+        .icon-row { display: flex; gap: 2em; justify-content: center; align-items: center; margin: 1.2em 0; flex-wrap: wrap; }
+        .icon-item { display: flex; flex-direction: column; align-items: center; gap: 0.5em; }
+        .icon-item img { height: 52px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08)); }
+        .icon-item span { font-size: 0.8em; color: var(--muted); font-weight: 500; }
+        .icon-item.primary { position: relative; }
+        .icon-item.primary::after {
+            content: 'primary';
+            position: absolute;
+            bottom: -16px;
+            font-size: 0.65em;
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Visual architecture ── */
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 1.5em 0;
+            flex-wrap: nowrap;
+        }
+        .arch-node {
+            background: var(--bg-light);
+            border: 2px solid #dfe6e9;
+            border-radius: var(--radius);
+            padding: 1em 1.4em;
+            text-align: center;
+            min-width: 140px;
+            box-shadow: var(--shadow);
+        }
+        .arch-node.accent { border-color: var(--accent); background: var(--blue-bg); }
+        .arch-node.green { border-color: var(--green); background: var(--green-bg); }
+        .arch-node.purple { border-color: var(--purple); background: var(--purple-bg); }
+        .arch-node.orange { border-color: var(--orange); background: var(--orange-bg); }
+        .arch-node.pink { border-color: var(--pink); background: var(--pink-bg); }
+        .arch-node.teal { border-color: var(--teal); background: var(--teal-bg); }
+        .arch-node h4 { font-size: 0.85em; font-weight: 700; margin-bottom: 0.3em; text-transform: uppercase; letter-spacing: 0.05em; }
+        .arch-node p { font-size: 0.78em; color: var(--muted); margin: 0; line-height: 1.4; }
+        .arch-node img { height: 28px; margin: 0.3em 0.2em; }
+        .arch-arrow {
+            font-size: 1.8em;
+            color: var(--accent);
+            padding: 0 0.3em;
+            flex-shrink: 0;
+        }
+
+        .arch-wrapper {
+            position: relative;
+            border: 2px dashed var(--accent-light);
+            border-radius: 24px;
+            padding: 2.5em 2em 1.5em;
+            margin: 0.5em 0;
+        }
+        .arch-wrapper .arch-label {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 0.3em 1.5em;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .arch-wrapper .arch-sublabel {
+            text-align: center;
+            margin-top: 1em;
+            font-size: 0.82em;
+            color: var(--muted);
+        }
+
+        /* ── Table ── */
+        table { width: 100%; border-collapse: collapse; font-size: 0.95em; margin: 0.8em 0; }
+        th { background: var(--accent); color: white; padding: 0.8em 1.2em; text-align: left; font-weight: 600; }
+        th:first-child { border-radius: var(--radius) 0 0 0; }
+        th:last-child { border-radius: 0 var(--radius) 0 0; }
+        td { padding: 0.8em 1.2em; border-bottom: 1px solid #eee; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: var(--bg-light); }
+
+        /* ── Table of Contents ── */
+        .toc {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+            margin-top: 1em;
+        }
+        .toc-item {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 1em 1.4em;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .toc-item:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .toc-num {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2em;
+            color: white;
+            flex-shrink: 0;
+        }
+        .toc-num.c1 { background: var(--accent); }
+        .toc-num.c2 { background: #00cec9; }
+        .toc-num.c3 { background: var(--purple); }
+        .toc-num.c4 { background: var(--green); }
+        .toc-num.c5 { background: var(--orange); }
+        .toc-num.c6 { background: var(--primary); }
+        .toc-num.c7 { background: var(--pink); }
+        .toc-text h3 { margin: 0; font-size: 1.05em; color: var(--primary); }
+        .toc-text p { margin: 0.15em 0 0; font-size: 0.82em; color: var(--muted); }
+
+        /* ── Takeaway list ── */
+        .takeaway-list { display: flex; flex-direction: column; gap: 0.6em; }
+        .takeaway-item {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            padding: 0.8em 1.2em;
+            box-shadow: var(--shadow);
+        }
+        .takeaway-num {
+            background: var(--accent);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+        .takeaway-item p { margin: 0; font-size: 0.95em; }
+
+        /* ── Navigation ── */
+        .nav {
+            position: fixed;
+            bottom: 24px;
+            right: 32px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+        .nav button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav button:hover { background: var(--accent); }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .slide-num {
+            position: fixed;
+            bottom: 28px;
+            left: 32px;
+            font-size: 0.85em;
+            color: var(--muted);
+            font-weight: 500;
+            z-index: 100;
+        }
+
+        /* ── Animations ── */
+        .slide.active { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<!-- ═══════════════════ SLIDE 0: Title ═══════════════════ -->
+<div class="slide section-title active">
+    <h1>Data Pipeline<br>Components</h1>
+    <p class="subtitle">Building blocks of a technical data project</p>
+    <span class="section-num">01</span>
+</div>
+
+<!-- ═══════════════════ SLIDE 1: Quote ═══════════════════ -->
+<div class="slide">
+    <div class="quote">"If your data pipeline lives in a single notebook, it's not a pipeline — it's a PowerPoint with code."</div>
+    <p style="margin-top:1.5em; max-width:750px;">This lesson breaks down a practical data engineering workflow into <span class="highlight">6 core components</span> + a bonus, spanning from raw data ingestion through orchestration and delivery.</p>
+</div>
+
+<!-- ═══════════════════ SLIDE 2: Table of Contents ═══════════════════ -->
+<div class="slide">
+    <h2>Table of Contents</h2>
+    <div class="toc">
+        <div class="toc-item" onclick="goToSlide(4)">
+            <div class="toc-num c1">1</div>
+            <div class="toc-text">
+                <h3>Ingestion</h3>
+                <p>1.1 What &amp; Why &bull; 1.2 Tools</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(7)">
+            <div class="toc-num c2">2</div>
+            <div class="toc-text">
+                <h3>Staging Area</h3>
+                <p>2.1 Why Stage &bull; 2.2 Where &bull; 2.3 Zone Pattern</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(9)">
+            <div class="toc-num c3">3</div>
+            <div class="toc-text">
+                <h3>Data Warehouse</h3>
+                <p>3.1 OLTP vs OLAP &bull; 3.2 Warehouse &bull; 3.3 Lakehouse &bull; 3.4 Comparison</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(14)">
+            <div class="toc-num c4">4</div>
+            <div class="toc-text">
+                <h3>Transformation</h3>
+                <p>4.1 Why Transform &bull; 4.2 Tools</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(17)">
+            <div class="toc-num c5">5</div>
+            <div class="toc-text">
+                <h3>BI Tools &amp; BI as Code</h3>
+                <p>5.1 Traditional BI &bull; 5.2 BI as Code</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(19)">
+            <div class="toc-num c6">6</div>
+            <div class="toc-text">
+                <h3>Orchestration</h3>
+                <p>6.1 What It Does &bull; 6.2 Tools</p>
+            </div>
+        </div>
+        <div class="toc-item" onclick="goToSlide(22)">
+            <div class="toc-num c7">7</div>
+            <div class="toc-text">
+                <h3>CI/CD (Bonus)</h3>
+                <p>7.1 Containers &bull; 7.2 CI/CD &bull; 7.3 Infrastructure as Code</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SLIDE 3: Big Picture ═══════════════════ -->
+<div class="slide">
+    <h2>The Big Picture</h2>
+    <div class="arch-wrapper">
+        <div class="arch-label">6. Orchestration (Airflow / Dagster / Prefect)</div>
+        <div class="arch-flow">
+            <div class="arch-node accent">
+                <h4>1. Ingestion</h4>
+                <p>Extract from<br>sources</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node teal">
+                <h4>2. Staging</h4>
+                <p>S3 / GCS / ADLS<br>(Raw Zone)</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node purple">
+                <h4>3. Warehouse</h4>
+                <p>DuckDB, Snowflake,<br>BigQuery</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node green">
+                <h4>4. Transform</h4>
+                <p>dbt core,<br>sqlmesh</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node orange">
+                <h4>5. BI Tools</h4>
+                <p>Dashboards,<br>BI as Code</p>
+            </div>
+        </div>
+        <div class="arch-sublabel">7. CI/CD &bull; Docker &bull; GitHub Actions &bull; Terraform</div>
+    </div>
+    <div class="callout" style="margin-top:1em;">Every component serves a purpose. Skip one, and the pipeline breaks — or worse, <strong>silently produces wrong data.</strong></div>
+</div>
+
+<!-- ═══════════════════ ETL vs ELT ═══════════════════ -->
+<div class="slide">
+    <h2>Two Frameworks: ETL vs ELT</h2>
+    <div class="grid-2">
+        <div class="card orange">
+            <h3 style="color: var(--orange); font-size:1.4em; margin-top:0;">ETL</h3>
+            <p style="font-weight:600; margin-bottom:0.6em;">Extract → Transform → Load</p>
+            <div class="arch-flow" style="margin:0.8em 0; justify-content:flex-start;">
+                <div class="arch-node" style="min-width:auto; padding:0.5em 0.8em; font-size:0.8em;"><h4 style="margin:0;">Extract</h4></div>
+                <div class="arch-arrow" style="font-size:1.2em;">&#8594;</div>
+                <div class="arch-node orange" style="min-width:auto; padding:0.5em 0.8em; font-size:0.8em;"><h4 style="margin:0;">Transform</h4></div>
+                <div class="arch-arrow" style="font-size:1.2em;">&#8594;</div>
+                <div class="arch-node" style="min-width:auto; padding:0.5em 0.8em; font-size:0.8em;"><h4 style="margin:0;">Load</h4></div>
+            </div>
+            <p>Transform data <strong>before</strong> loading into the warehouse. The traditional approach.</p>
+            <ul>
+                <li>Transform happens on a separate server (Informatica, Talend, SSIS)</li>
+                <li>Only clean, structured data enters the warehouse</li>
+                <li>You lose the raw data — can't reprocess later</li>
+            </ul>
+        </div>
+        <div class="card green">
+            <h3 style="color: var(--green); font-size:1.4em; margin-top:0;">ELT</h3>
+            <p style="font-weight:600; margin-bottom:0.6em;">Extract → Load → Transform</p>
+            <div class="arch-flow" style="margin:0.8em 0; justify-content:flex-start;">
+                <div class="arch-node" style="min-width:auto; padding:0.5em 0.8em; font-size:0.8em;"><h4 style="margin:0;">Extract</h4></div>
+                <div class="arch-arrow" style="font-size:1.2em;">&#8594;</div>
+                <div class="arch-node" style="min-width:auto; padding:0.5em 0.8em; font-size:0.8em;"><h4 style="margin:0;">Load</h4></div>
+                <div class="arch-arrow" style="font-size:1.2em;">&#8594;</div>
+                <div class="arch-node green" style="min-width:auto; padding:0.5em 0.8em; font-size:0.8em;"><h4 style="margin:0;">Transform</h4></div>
+            </div>
+            <p>Load raw data first, transform <strong>inside</strong> the warehouse. The modern approach.</p>
+            <ul>
+                <li>Warehouse handles the compute (Snowflake, BigQuery, DuckDB)</li>
+                <li>Raw data is preserved — reprocess anytime</li>
+                <li>Transform with SQL (dbt) — accessible to analysts</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ETL vs ELT comparison -->
+<div class="slide">
+    <h2>Why ELT Won</h2>
+    <table>
+        <thead>
+            <tr><th>Factor</th><th>ETL (Traditional)</th><th>ELT (Modern)</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>When it emerged</strong></td><td>1990s — storage was expensive</td><td>2010s — cloud made storage cheap</td></tr>
+            <tr><td><strong>Transform happens</strong></td><td>On a separate server before loading</td><td>Inside the warehouse after loading</td></tr>
+            <tr><td><strong>Raw data preserved?</strong></td><td>No — only transformed data is stored</td><td>Yes — always keep the original</td></tr>
+            <tr><td><strong>Reprocessing</strong></td><td>Must re-extract from source</td><td>Just re-run the transformation</td></tr>
+            <tr><td><strong>Tools</strong></td><td>Informatica, SSIS, Talend</td><td>dbt, dlthub, Airbyte + Snowflake</td></tr>
+            <tr><td><strong>Who transforms</strong></td><td>ETL developers (Java, proprietary)</td><td>Analytics engineers (SQL)</td></tr>
+            <tr><td><strong>Scalability</strong></td><td>Limited by ETL server capacity</td><td>Scales with warehouse compute</td></tr>
+        </tbody>
+    </table>
+    <div class="callout good-box" style="margin-top:1em;">
+        <strong>Why ELT exists:</strong> Cloud warehouses made storage cheap and compute elastic. It no longer makes sense to transform before loading — load everything raw, preserve it, and let the warehouse do the heavy lifting.
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 1: Ingestion ═══════════════════ -->
+<div class="slide section-title">
+    <h1>1. Ingestion</h1>
+    <p class="subtitle">Getting data from sources into your system</p>
+    <span class="section-num">01</span>
+</div>
+
+<!-- 1.1 What & Why -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">1.1</span>
+        <h2>What is Ingestion?</h2>
+    </div>
+    <p>The process of extracting data from various sources and loading it into your data warehouse.</p>
+    <div class="grid-4" style="margin-top:1em;">
+        <div class="card accent">
+            <h3>OLTP Databases</h3>
+            <p>PostgreSQL, MySQL, SQL Server — the databases behind your applications</p>
+        </div>
+        <div class="card accent">
+            <h3>APIs</h3>
+            <p>REST/GraphQL from SaaS tools — Stripe, Salesforce, Google Analytics</p>
+        </div>
+        <div class="card accent">
+            <h3>Third-Party</h3>
+            <p>Vendor data feeds, partner sharing, public datasets</p>
+        </div>
+        <div class="card accent">
+            <h3>Web Scraping</h3>
+            <p>Last resort when no API exists — check ToS first</p>
+        </div>
+    </div>
+    <div class="callout" style="margin-top:0.8em;">
+        <strong>Key principle:</strong> Extract data as-is first. Never transform during ingestion — you lose the original.
+    </div>
+</div>
+
+<!-- 1.2 Tools -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">1.2</span>
+        <h2>Ingestion Tools</h2>
+    </div>
+    <div class="grid-3">
+        <div class="card accent">
+            <span class="primary-badge">Primary</span>
+            <div class="icon-row" style="margin:0.5em 0;"><div class="icon-item"><img src="../../../assets/icons/dlt.svg" alt="dlt"><span>dlthub</span></div></div>
+            <p>Python-native, open-source data ingestion library. Lightweight, easy to get started, great for local development.</p>
+        </div>
+        <div class="card">
+            <h3>Alternatives</h3>
+            <div class="icon-row" style="margin:0.5em 0;">
+                <div class="icon-item"><img src="../../../assets/icons/airbyte.svg" alt="Airbyte"><span>Airbyte</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/fivetran.svg" alt="Fivetran"><span>Fivetran</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/stitch.svg" alt="Stitch"><span>Stitch</span></div>
+            </div>
+            <p>Managed connectors with pre-built integrations. Less code, more configuration.</p>
+        </div>
+        <div class="card">
+            <h3>Extraction Methods</h3>
+            <ul>
+                <li><strong>Full load</strong> — dump entire table</li>
+                <li><strong>Incremental</strong> — only new/changed rows</li>
+                <li><strong>CDC</strong> — stream every change in real time</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 2: Staging Area ═══════════════════ -->
+<div class="slide section-title">
+    <h1>2. Staging Area</h1>
+    <p class="subtitle">The first landing zone for raw data</p>
+    <span class="section-num">02</span>
+</div>
+
+<!-- 2.1 – 2.3 Why, Where & Zone Pattern -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">2.1 – 2.3</span>
+        <h2>Why, Where &amp; How to Stage</h2>
+    </div>
+    <div class="grid-2">
+        <div>
+            <div class="grid-3" style="grid-template-columns: 1fr;">
+                <div class="card teal">
+                    <h3>2.1 Decouple</h3>
+                    <p>Extract fast, transform later — don't block ingestion with processing</p>
+                </div>
+                <div class="card teal">
+                    <h3>2.1 Preserve</h3>
+                    <p>Always keep an untouched copy — you'll need it when something breaks</p>
+                </div>
+                <div class="card teal">
+                    <h3>2.1 Replay</h3>
+                    <p>If transformation logic changes, reprocess from raw</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="card" style="background: var(--bg-dark); color: white; height: 100%;">
+                <h3 style="color: var(--teal);">2.2 Where to Stage</h3>
+                <div class="icon-row" style="justify-content: flex-start; margin: 0.8em 0;">
+                    <div class="icon-item"><img src="../../../assets/icons/s3.png" alt="S3"><span style="color:#aaa">S3</span></div>
+                    <div class="icon-item"><img src="../../../assets/icons/google-bigquery.svg" alt="GCS"><span style="color:#aaa">GCS</span></div>
+                    <div class="icon-item"><img src="../../../assets/icons/azure.svg" alt="Azure"><span style="color:#aaa">ADLS</span></div>
+                </div>
+                <h3 style="color: var(--teal); margin-top:1em;">2.3 Zone Pattern</h3>
+                <p style="color: #ccc; font-size:0.9em;">
+                    <strong style="color:var(--teal)">raw/</strong> &rarr; untouched as extracted<br>
+                    <strong style="color:var(--teal)">cleaned/</strong> &rarr; validated, lightly processed<br>
+                    <strong style="color:var(--teal)">curated/</strong> &rarr; modeled, ready for consumption
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="callout good-box" style="margin-top:0.8em;">
+        <strong>Principle:</strong> Extract data as-is first. Never transform during ingestion — you lose the original.
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 3: Data Warehouse ═══════════════════ -->
+<div class="slide section-title">
+    <h1>3. Data Warehouse</h1>
+    <p class="subtitle">Where your data lives for analytics</p>
+    <span class="section-num">03</span>
+</div>
+
+<!-- 2.1 OLTP vs OLAP -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.1</span>
+        <h2>OLTP vs OLAP</h2>
+    </div>
+    <div class="grid-2">
+        <div class="card orange">
+            <h3 style="color: var(--orange);">OLTP (Transactional)</h3>
+            <div class="icon-row" style="justify-content:flex-start; margin:0.5em 0;">
+                <div class="icon-item"><img src="../../../assets/icons/postgresql.svg" alt="PostgreSQL"><span>PostgreSQL</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/microsoft-sql-server.svg" alt="SQL Server"><span>SQL Server</span></div>
+            </div>
+            <ul>
+                <li>Optimized for <strong>writes</strong></li>
+                <li>Powers your application</li>
+                <li>Row-based storage</li>
+                <li>Not designed for analytical queries</li>
+            </ul>
+        </div>
+        <div class="card green">
+            <h3 style="color: var(--green);">OLAP (Analytical)</h3>
+            <div class="icon-row" style="justify-content:flex-start; margin:0.5em 0;">
+                <div class="icon-item"><img src="../../../assets/icons/snowflake.svg" alt="Snowflake"><span>Snowflake</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/google-bigquery.svg" alt="BigQuery"><span>BigQuery</span></div>
+            </div>
+            <ul>
+                <li>Optimized for <strong>reads</strong></li>
+                <li>Powers your analytics</li>
+                <li>Columnar storage</li>
+                <li>Fast aggregations, joins, window functions</li>
+            </ul>
+        </div>
+    </div>
+    <div class="callout" style="margin-top:0.8em;">
+        <strong>Why separate?</strong> Querying OLTP directly for analytics would slow down the application. Extract → load into OLAP → analyze there.
+    </div>
+</div>
+
+<!-- 2.2 Warehouse tools -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.2</span>
+        <h2>Data Warehouse Tools</h2>
+    </div>
+    <div class="icon-row" style="margin: 0.5em 0 1em;">
+        <div class="icon-item primary"><img src="../../../assets/icons/duckdb.svg" alt="DuckDB"><span>DuckDB</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/snowflake.svg" alt="Snowflake"><span>Snowflake</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/databricks.svg" alt="Databricks"><span>Databricks</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/google-bigquery.svg" alt="BigQuery"><span>BigQuery</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/aws-redshift.svg" alt="Redshift"><span>Redshift</span></div>
+    </div>
+    <div class="grid-2">
+        <div class="card green">
+            <h3 style="color: var(--green);">Pros</h3>
+            <ul>
+                <li>SQL-native, familiar to analysts</li>
+                <li>Managed — less operational burden</li>
+                <li>Built-in security, governance, scaling</li>
+            </ul>
+        </div>
+        <div class="card orange">
+            <h3 style="color: var(--orange);">Cons</h3>
+            <ul>
+                <li>Vendor lock-in (cloud warehouses)</li>
+                <li>Cost scales with compute usage</li>
+                <li>Less flexible for non-SQL workloads</li>
+            </ul>
+        </div>
+    </div>
+    <div class="callout good-box" style="margin-top:0.8em;">
+        <strong>Why DuckDB as primary?</strong> Free, runs locally, zero setup — perfect for learning and local ELT development. Production → Snowflake/BigQuery.
+    </div>
+</div>
+
+<!-- 2.3 Lakehouse -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.3</span>
+        <h2>Lakehouse (Alternative)</h2>
+    </div>
+    <p>An open architecture combining data lake flexibility with warehouse structure.</p>
+    <div class="grid-4" style="margin: 1em 0;">
+        <div class="card accent">
+            <div class="icon-row" style="margin:0 0 0.5em;"><div class="icon-item"><img src="../../../assets/icons/s3.png" alt="S3"></div></div>
+            <h3>Object Storage</h3>
+            <p>S3 — stores the actual data files</p>
+        </div>
+        <div class="card purple">
+            <div class="icon-row" style="margin:0 0 0.5em;">
+                <div class="icon-item"><img src="../../../assets/icons/apache-iceberg.png" alt="Iceberg"></div>
+                <div class="icon-item"><img src="../../../assets/icons/delta-lake.png" alt="Delta Lake"></div>
+            </div>
+            <h3>Table Format</h3>
+            <p>Iceberg / Delta Lake — ACID, time travel</p>
+        </div>
+        <div class="card green">
+            <div class="icon-row" style="margin:0 0 0.5em;">
+                <div class="icon-item"><img src="../../../assets/icons/trino.png" alt="Trino"></div>
+                <div class="icon-item"><img src="../../../assets/icons/spark.svg" alt="Spark"></div>
+            </div>
+            <h3>Query Engine</h3>
+            <p>Trino / Spark — SQL over files</p>
+        </div>
+        <div class="card orange">
+            <div class="icon-row" style="margin:0 0 0.5em;">
+                <div class="icon-item"><img src="../../../assets/icons/postgresql.svg" alt="Postgres"></div>
+                <div class="icon-item"><img src="../../../assets/icons/hive.png" alt="Hive"></div>
+            </div>
+            <h3>Catalog</h3>
+            <p>Postgres / Hive / Glue — metadata</p>
+        </div>
+    </div>
+    <div class="callout purple-box">Open formats, full control, but more operational overhead. Best for engineering-heavy teams.</div>
+</div>
+
+<!-- 2.4 Comparison -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">3.4</span>
+        <h2>Warehouse vs Lakehouse</h2>
+    </div>
+    <table>
+        <thead>
+            <tr><th>Factor</th><th>Warehouse</th><th>Lakehouse</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Team skill</strong></td><td>SQL-heavy, analyst-driven</td><td>Engineering-heavy</td></tr>
+            <tr><td><strong>Data types</strong></td><td>Structured</td><td>Structured + unstructured</td></tr>
+            <tr><td><strong>Control needs</strong></td><td>Low — prefer managed</td><td>High — need open formats</td></tr>
+            <tr><td><strong>Budget model</strong></td><td>Pay per query / compute</td><td>Pay for infra you manage</td></tr>
+            <tr><td><strong>Speed to value</strong></td><td>Faster to set up</td><td>More upfront investment</td></tr>
+        </tbody>
+    </table>
+    <div class="callout purple-box" style="margin-top:1em;">There is no universally "better" choice — it depends on the <strong>team</strong>, <strong>data</strong>, and <strong>business</strong>.</div>
+</div>
+
+<!-- ═══════════════════ SECTION 3: Transformation ═══════════════════ -->
+<div class="slide section-title">
+    <h1>4. Transformation</h1>
+    <p class="subtitle">Turning raw data into analytics-ready models</p>
+    <span class="section-num">04</span>
+</div>
+
+<!-- 3.1 Why Transform -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">4.1</span>
+        <h2>Why Transform?</h2>
+    </div>
+    <p>Raw data is messy. Transformation cleans, structures, and models it for analytics.</p>
+    <div class="grid-3" style="margin-top:1em;">
+        <div class="card green">
+            <h3>Clean</h3>
+            <p>Handle nulls, duplicates, formatting issues — make data trustworthy</p>
+        </div>
+        <div class="card green">
+            <h3>Model</h3>
+            <p>Build dimensional models (facts &amp; dimensions), create business logic</p>
+        </div>
+        <div class="card green">
+            <h3>Test</h3>
+            <p>Validate data quality — not null, unique, accepted values, relationships</p>
+        </div>
+    </div>
+    <div class="callout good-box" style="margin-top:1em;">
+        <strong>ELT pattern:</strong> Extract → Load raw into warehouse → Transform inside the warehouse using SQL. The warehouse handles the compute.
+    </div>
+</div>
+
+<!-- 3.2 Tools -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">4.2</span>
+        <h2>Transformation Tools</h2>
+    </div>
+    <div class="grid-2">
+        <div class="card green">
+            <span class="primary-badge">Primary</span>
+            <div class="icon-row" style="margin:0.5em 0;"><div class="icon-item"><img src="../../../assets/icons/dbt.svg" alt="dbt"><span>dbt core</span></div></div>
+            <ul>
+                <li>SQL-based transformations</li>
+                <li>Version-controlled models</li>
+                <li>Built-in testing &amp; documentation</li>
+                <li>Jinja templating for DRY SQL</li>
+                <li>Industry standard for analytics engineering</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3>Alternative</h3>
+            <h3 style="color: var(--primary); font-size:1.3em; margin-top:0.5em;">sqlmesh</h3>
+            <ul>
+                <li>Newer, built on learnings from dbt</li>
+                <li>Built-in column-level lineage</li>
+                <li>Virtual environments for testing</li>
+                <li>Incremental by default</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 4: BI Tools ═══════════════════ -->
+<div class="slide section-title">
+    <h1>5. BI Tools &amp; BI as Code</h1>
+    <p class="subtitle">Where data becomes useful to the business</p>
+    <span class="section-num">05</span>
+</div>
+
+<!-- 4.1 & 4.2 -->
+<div class="slide">
+    <div class="grid-2">
+        <div class="card accent">
+            <div class="slide-header" style="margin-bottom:0.4em;">
+                <span class="num">5.1</span>
+                <h3 style="margin:0; font-size:1.15em; color: var(--primary);">Traditional BI</h3>
+            </div>
+            <div class="icon-row" style="justify-content:flex-start; margin:0.5em 0 0.8em;">
+                <div class="icon-item"><img src="../../../assets/icons/powerbi.svg" alt="Power BI"><span>Power BI</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/tableau.svg" alt="Tableau"><span>Tableau</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/mode.svg" alt="Mode"><span>Mode</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/hex.svg" alt="Hex"><span>Hex</span></div>
+            </div>
+            <ul>
+                <li>Drag-and-drop dashboards, reports</li>
+                <li>Accessible to non-technical users</li>
+                <li>Connect directly to warehouse</li>
+            </ul>
+            <div class="callout warn-box" style="margin-top:0.8em;"><strong>Risk:</strong> Dashboard sprawl — nobody knows which is the source of truth.</div>
+        </div>
+        <div class="card purple">
+            <div class="slide-header" style="margin-bottom:0.4em;">
+                <span class="num">5.2</span>
+                <h3 style="margin:0; font-size:1.15em; color: var(--primary);">BI as Code</h3>
+            </div>
+            <span class="primary-badge">Primary: Visivo</span>
+            <div class="icon-row" style="justify-content:flex-start; margin:0.5em 0 0.8em;">
+                <div class="icon-item"><img src="../../../assets/icons/streamlit.svg" alt="Streamlit"><span>Streamlit</span></div>
+                <div class="icon-item"><img src="../../../assets/icons/dbt.svg" alt="dbt"><span>dbt metrics</span></div>
+            </div>
+            <ul>
+                <li><strong>Visivo</strong> — dashboards defined in YAML, version-controlled</li>
+                <li><strong>Metrics layer</strong> — define once, use everywhere</li>
+                <li><strong>Data apps</strong> — Streamlit, Evidence</li>
+            </ul>
+            <div class="callout purple-box" style="margin-top:0.8em;">When a metric shows 5 different numbers, <strong>trust in data dies.</strong></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 5: Orchestration ═══════════════════ -->
+<div class="slide section-title">
+    <h1>6. Orchestration</h1>
+    <p class="subtitle">The brain of the pipeline</p>
+    <span class="section-num">06</span>
+</div>
+
+<!-- 5.1 What it does -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">6.1</span>
+        <h2>What Orchestration Does</h2>
+    </div>
+    <div class="grid-4">
+        <div class="card accent">
+            <h3>Schedule</h3>
+            <p>Trigger pipeline tasks on time or on events</p>
+        </div>
+        <div class="card accent">
+            <h3>Dependencies</h3>
+            <p>Task B waits for task A — no race conditions</p>
+        </div>
+        <div class="card accent">
+            <h3>Retries</h3>
+            <p>Handle failures gracefully with alerts and retries</p>
+        </div>
+        <div class="card accent">
+            <h3>Visibility</h3>
+            <p>Logs, run history, data lineage</p>
+        </div>
+    </div>
+    <div class="callout warn-box" style="margin-top:1.5em; font-size:1.1em; text-align:center;">
+        <strong>Without orchestration:</strong> you're running cron jobs and praying.
+    </div>
+</div>
+
+<!-- 5.2 Tools -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">6.2</span>
+        <h2>Orchestration Tools</h2>
+    </div>
+    <div class="grid-3">
+        <div class="card accent">
+            <span class="primary-badge">Primary</span>
+            <div class="icon-row" style="margin:0.5em 0;"><div class="icon-item"><img src="../../../assets/icons/apache-airflow.svg" alt="Airflow"><span>Airflow</span></div></div>
+            <p>Industry standard, DAG-based, Python-native. Massive community, battle-tested in production at scale.</p>
+        </div>
+        <div class="card">
+            <div class="icon-row" style="margin:0 0 0.5em;"><div class="icon-item"><img src="../../../assets/icons/prefect.svg" alt="Prefect"><span>Prefect</span></div></div>
+            <p>Flow-based, Pythonic, less boilerplate. Great for getting started — just decorate your Python functions.</p>
+        </div>
+        <div class="card">
+            <div class="icon-row" style="margin:0 0 0.5em;"><div class="icon-item"><img src="../../../assets/icons/dagster.svg" alt="Dagster"><span>Dagster</span></div></div>
+            <p>Asset-based — define <em>what</em> you produce, not <em>how</em> to run it. Modern dev experience.</p>
+        </div>
+    </div>
+    <div class="callout purple-box" style="margin-top:1em;">
+        <strong>Key trend:</strong> DAG-based (define task order) &rarr; asset-based (define desired outputs).
+    </div>
+</div>
+
+<!-- ═══════════════════ SECTION 6: CI/CD (Bonus) ═══════════════════ -->
+<div class="slide section-title">
+    <h1>7. CI/CD</h1>
+    <p class="subtitle">Bonus — version control &amp; deployment</p>
+    <span class="section-num">07</span>
+</div>
+
+<!-- 6.1 Containers -->
+<div class="slide">
+    <div class="slide-header">
+        <span class="num">7.1</span>
+        <h2>Containers</h2>
+    </div>
+    <p>Pipelines are software — <span class="warn">"it works on my laptop"</span> is not acceptable.</p>
+    <div class="icon-row" style="margin:1.2em 0;">
+        <div class="icon-item"><img src="../../../assets/icons/docker.svg" alt="Docker"><span>Docker</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/kubernetes.svg" alt="K8s"><span>Kubernetes</span></div>
+    </div>
+    <div class="grid-3">
+        <div class="card accent">
+            <h3>Package</h3>
+            <p>Bundle code + dependencies into a reproducible image</p>
+        </div>
+        <div class="card accent">
+            <h3>Consistency</h3>
+            <p>Same environment in dev, staging, and production</p>
+        </div>
+        <div class="card accent">
+            <h3>Deploy</h3>
+            <p>Build once, run anywhere</p>
+        </div>
+    </div>
+</div>
+
+<!-- 6.2 & 6.3 CI/CD + IaC -->
+<div class="slide">
+    <div class="icon-row" style="margin-bottom:1em;">
+        <div class="icon-item primary"><img src="../../../assets/icons/github.svg" alt="GitHub"><span>GitHub Actions</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/git.svg" alt="Git"><span>Git</span></div>
+        <div class="icon-item"><img src="../../../assets/icons/terraform.svg" alt="Terraform"><span>Terraform</span></div>
+    </div>
+    <div class="grid-2">
+        <div class="card green">
+            <div class="slide-header" style="margin-bottom:0.4em;">
+                <span class="num">7.2</span>
+                <h3 style="margin:0; font-size:1.15em; color: var(--primary);">CI/CD</h3>
+            </div>
+            <span class="primary-badge">Primary: GitHub Actions</span>
+            <ul>
+                <li><strong>CI</strong> — auto-test on every push (lint, unit tests, dbt tests)</li>
+                <li><strong>CD</strong> — auto-deploy to production after tests pass</li>
+            </ul>
+            <div class="callout good-box" style="margin-top:0.8em;">Catch broken transformations <strong>before</strong> they hit production.</div>
+        </div>
+        <div class="card purple">
+            <div class="slide-header" style="margin-bottom:0.4em;">
+                <span class="num">7.3</span>
+                <h3 style="margin:0; font-size:1.15em; color: var(--primary);">Infrastructure as Code</h3>
+            </div>
+            <ul>
+                <li>Define cloud resources (S3, databases, IAM) in code</li>
+                <li>Reproducible, reviewable, version-controlled</li>
+            </ul>
+            <div class="callout purple-box" style="margin-top:0.8em;">No more <strong>"who clicked what in the AWS console?"</strong></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ Full Architecture ═══════════════════ -->
+<div class="slide">
+    <h2>Putting It All Together</h2>
+    <div class="arch-wrapper">
+        <div class="arch-label">6. Orchestration &bull; 7. CI/CD &bull; Containers</div>
+        <div class="arch-flow">
+            <div class="arch-node accent" style="min-width:130px;">
+                <h4>1. Ingestion</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/dlt.svg" alt="" style="height:20px;">
+                    <img src="../../../assets/icons/airbyte.svg" alt="" style="height:20px;">
+                </div>
+                <p>dlthub, Airbyte</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node teal" style="min-width:120px;">
+                <h4>2. Staging</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/s3.png" alt="" style="height:20px;">
+                </div>
+                <p>S3 / GCS</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node purple" style="min-width:130px;">
+                <h4>3. Warehouse</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/duckdb.svg" alt="" style="height:20px;">
+                    <img src="../../../assets/icons/snowflake.svg" alt="" style="height:20px;">
+                </div>
+                <p>DuckDB, Snowflake</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node green" style="min-width:120px;">
+                <h4>4. Transform</h4>
+                <div style="display:flex; gap:4px; justify-content:center; margin:0.4em 0;">
+                    <img src="../../../assets/icons/dbt.svg" alt="" style="height:20px;">
+                </div>
+                <p>dbt core</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node orange" style="min-width:130px;">
+                <h4>5. BI Tools</h4>
+                <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap; margin:0.4em 0;">
+                    <img src="../../../assets/icons/tableau.svg" alt="" style="height:20px;">
+                    <img src="../../../assets/icons/powerbi.svg" alt="" style="height:20px;">
+                </div>
+                <p>Visivo, Tableau</p>
+            </div>
+        </div>
+        <div class="arch-sublabel">
+            <img src="../../../assets/icons/apache-airflow.svg" alt="" style="height:18px; vertical-align:middle;"> Airflow &nbsp;&bull;&nbsp;
+            <img src="../../../assets/icons/docker.svg" alt="" style="height:18px; vertical-align:middle;"> Docker &nbsp;&bull;&nbsp;
+            <img src="../../../assets/icons/github.svg" alt="" style="height:18px; vertical-align:middle;"> GitHub Actions &nbsp;&bull;&nbsp;
+            <img src="../../../assets/icons/terraform.svg" alt="" style="height:18px; vertical-align:middle;"> Terraform
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ Who Owns What ═══════════════════ -->
+<div class="slide">
+    <h2>Who Owns What?</h2>
+    <p style="margin-bottom:1em;">Different roles own different parts of the pipeline. Think of it as <span class="highlight">backend</span> vs <span class="highlight">frontend</span> of the data team.</p>
+    <div class="grid-2">
+        <div class="card" style="border-left: 4px solid var(--accent); background: var(--blue-bg);">
+            <h3 style="color: var(--accent); margin-top:0;">"Backend" — Feed data into the warehouse</h3>
+            <ul>
+                <li><strong>Data Engineer (DE)</strong> — owns ingestion, staging, warehouse infra, orchestration, CI/CD. Builds and maintains the pipes.</li>
+                <li><strong>Analytics Engineer (AE)</strong> — owns the transformation layer (dbt models), data quality tests, documentation. Bridge between DE and analysts.</li>
+            </ul>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--orange); background: var(--orange-bg);">
+            <h3 style="color: var(--orange); margin-top:0;">"Frontend" — Consume data from the warehouse</h3>
+            <ul>
+                <li><strong>Data Analyst (DA)</strong> — owns dashboards, reports, ad-hoc analysis. Translates data into business decisions.</li>
+                <li><strong>Data Scientist (DS)</strong> — owns ML models, experiments, statistical analysis. Builds predictive features on top of clean data.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="grid-3" style="margin-top:0.8em;">
+        <div class="card" style="border-top: 4px solid var(--purple);">
+            <h3>MLOps</h3>
+            <p>Model deployment, monitoring, feature stores. Productionizes what DS builds.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h3>Platform / Infra</h3>
+            <p>Cloud infra, Kubernetes, networking, IAM. Keeps the whole thing running.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--teal);">
+            <h3>Data Governance</h3>
+            <p>Access control, PII, compliance, data catalog. Makes sure data is used responsibly.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ Ownership Map ═══════════════════ -->
+<div class="slide">
+    <h2>Ownership Across the Pipeline</h2>
+    <div class="arch-wrapper" style="padding-top:1.5em;">
+        <div class="arch-flow">
+            <div class="arch-node accent" style="min-width:120px;">
+                <h4>1. Ingestion</h4>
+                <p style="color:var(--accent); font-weight:600;">DE</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node teal" style="min-width:110px;">
+                <h4>2. Staging</h4>
+                <p style="color:var(--teal); font-weight:600;">DE</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node purple" style="min-width:120px;">
+                <h4>3. Warehouse</h4>
+                <p style="color:var(--purple); font-weight:600;">DE + AE</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node green" style="min-width:120px;">
+                <h4>4. Transform</h4>
+                <p style="color:var(--green); font-weight:600;">AE</p>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node orange" style="min-width:120px;">
+                <h4>5. BI / ML</h4>
+                <p style="color:var(--orange); font-weight:600;">DA + DS</p>
+            </div>
+        </div>
+    </div>
+    <div class="grid-2" style="margin-top:1.5em;">
+        <div class="callout" style="margin:0;">
+            <strong>Orchestration (6)</strong> — usually DE, sometimes shared with AE
+        </div>
+        <div class="callout purple-box" style="margin:0;">
+            <strong>CI/CD &amp; Infra (7)</strong> — DE + Platform/Infra team
+        </div>
+    </div>
+    <div class="callout warn-box" style="margin-top:0.8em;">
+        <strong>Reality check:</strong> In smaller teams, one person wears multiple hats. In larger orgs, these are distinct roles with clear handoff points.
+    </div>
+</div>
+
+<!-- ═══════════════════ Key Takeaways ═══════════════════ -->
+<div class="slide">
+    <h2>Key Takeaways</h2>
+    <div class="takeaway-list">
+        <div class="takeaway-item"><div class="takeaway-num">1</div><p><strong>Ingestion</strong> — extract data as-is, never transform during extraction</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">2</div><p><strong>Staging</strong> — always land raw data first. Preserve, decouple, enable replay.</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">3</div><p><strong>Warehouse</strong> — start with DuckDB locally, scale to Snowflake/BigQuery in production</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">4</div><p><strong>Transformation</strong> — dbt is the industry standard, SQL-based, testable, version-controlled</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">5</div><p><strong>BI Tools</strong> — BI as Code prevents dashboard sprawl and metric inconsistency</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">6</div><p><strong>Orchestration</strong> — without it, pipelines are just scripts. Airflow is the industry standard.</p></div>
+        <div class="takeaway-item"><div class="takeaway-num">7</div><p><strong>CI/CD</strong> — treat pipelines like software. GitHub Actions + Docker + Terraform.</p></div>
+    </div>
+    <div class="callout" style="margin-top:1em;">These five components + CI/CD provide the optimal foundation. The knowledge transfers across the entire data engineering landscape.</div>
+</div>
+
+<!-- ═══════════════════ Questions ═══════════════════ -->
+<div class="slide section-title">
+    <h1>Questions?</h1>
+</div>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<div class="nav">
+    <button onclick="goToSlide(2)" title="Table of Contents" style="font-size:0.9em;">&#9776;</button>
+    <button onclick="changeSlide(-1)" title="Previous">&#8592;</button>
+    <button onclick="changeSlide(1)" title="Next">&#8594;</button>
+</div>
+
+<script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progress = document.getElementById('progress');
+    const slideNum = document.getElementById('slideNum');
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, slides.length - 1));
+        slides[current].classList.add('active');
+        progress.style.width = ((current + 1) / slides.length * 100) + '%';
+        slideNum.textContent = (current + 1) + ' / ' + slides.length;
+    }
+
+    function goToSlide(n) { showSlide(n); }
+    function changeSlide(dir) { showSlide(current + dir); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+        if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+        if (e.key === 'End') { e.preventDefault(); showSlide(slides.length - 1); }
+        if (e.key === 't' || e.key === 'T') { e.preventDefault(); goToSlide(2); }
+    });
+
+    showSlide(0);
+</script>
+
+</body>
+</html>
